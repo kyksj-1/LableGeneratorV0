@@ -3,6 +3,7 @@ from .returns import ReturnLabelGenerator
 from .normalizer import CrossSectionalNormalizer
 from .discretizer import Discretizer
 from .factory import LabelFactory
+from .price_comparison import PriceComparisonLabel
 
 __all__ = [
     "LabelGenerator",
@@ -10,4 +11,5 @@ __all__ = [
     "CrossSectionalNormalizer",
     "Discretizer",
     "LabelFactory",
+    "PriceComparisonLabel",
 ]
