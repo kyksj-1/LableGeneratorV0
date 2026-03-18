@@ -1,0 +1,15 @@
+# 这是动态配置文件，用于管理运行时的参数
+# 常见的如：日期范围、进程数、是否缓存、过滤条件等
+
+run_mode: "debug"  # debug / production
+
+data_loading:
+  use_cache: true
+  start_date: "2014-01-01"
+  end_date: "2024-01-01"
+  # 如果只测试几只股票，可以填入代码列表，例如 ["000001", "600519"]
+  # 为空或 null 则表示全市场加载
+  target_codes: null
+  
+processing:
+  n_jobs: 4 # 如果后续有需要 CPU 密集计算的地方
