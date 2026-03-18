@@ -5,34 +5,34 @@
 
 ## 用户喜好
 
-1. 源代码 执行代码 配置文件解耦 可分为src/ scripts/ config/ 等目录. 
-2. 最基本的配置用 config_base.py 实现, 例如后续scripts 中的数据目录等内容. 一般这个config_base.py的配置是不动的(只要给定一个用户,就不用改变. 只有当程序给到新用户时, 才有可能根据每个用户不同而改变的变量放这里). 而常见的动态配置, 如日期范围 进程数 加载的股票数 是否落盘缓存等, 则用 config.yaml 文件管理配置.
+1. 源代码 执行代码 配置文件解耦 可分为src/ scripts/ config/ 等目录.
+2. 最基本的配置用 config\_base.py 实现, 例如后续scripts 中的数据目录等内容. 一般这个config\_base.py的配置是不动的(只要给定一个用户,就不用改变. 只有当程序给到新用户时, 才有可能根据每个用户不同而改变的变量放这里). 而常见的动态配置, 如日期范围 进程数 加载的股票数 是否落盘缓存等, 则用 config.yaml 文件管理配置.
 3. 环境变量 KALMAN\_DATA\_ROOT\_AKS 指向的目录为本版本项目统一放数据的位置
 4. 如果git提交, 提交者为:kyksj-1
 5. 目前的原始parquet文件在环境变量 KALMAN\_DATA\_ROOT\_AKS 指向的目录下的raw文件夹.
 6. 输出的回答讲解, 如无特殊说明,请用中文, 并放在 'AI RESPONSE' 文件夹中.
 7. 为实现高性能, 考虑用 Polars 库代替 Pandas 库
-8. 开发环境为conda的quant_fin_env
+8. 开发环境为conda的quant\_fin\_env
 
 ## 任务
 
-注意, 打了勾[x]的是已经完成的任务.
+注意, 打了勾\[x]的是已经完成的任务.
 
 ### 初步加载
 
-- [] 写一个抽象类 DataLoader, 定义了加载数据的基本方法, 注意必须是非常通用的. 未来可以用于加载日数据 分钟数据 行业数据 指数数据等  
-- [] 写一个继承 DataLoader 的类 DailyDataLoader, 实现对list of parquet文件的加载 
+- [x] 写一个抽象类 DataLoader, 定义了加载数据的基本方法, 注意必须是非常通用的. 未来可以用于加载日数据 分钟数据 行业数据 指数数据等
+- [x] 写一个继承 DataLoader 的类 DailyDataLoader, 实现对list of parquet文件的加载
 
-     默认加载的字段为 ['date', 'code', 'open', 'close', 'high', 'low', 'volume', 'amount', 'turnover_rate', 'pe_ratio'] 其中, 'date''code' 可以视为每一条截面数据的"指纹" (注意可选功能: code加前缀"sh"或"sz"以保证唯一性. 默认关闭) 其余可视为原始特征
+  默认加载的字段为 \['date', 'code', 'open', 'close', 'high', 'low', 'volume', 'amount', 'turnover\_rate', 'pe\_ratio'] 其中, 'date''code' 可以视为每一条截面数据的"指纹" (注意可选功能: code加前缀"sh"或"sz"以保证唯一性. 默认关闭) 其余可视为原始特征
 
-     数据示例: {"date":"2014-01-02","code":"600519","open":127.99,"close":125.98,"high":127.99,"low":125.6,"volume":21976,"amount":277430224,"turnover_rate":0.211684,"pe_ratio":9.370103} (原文件为parquet, 为做示意我改成json格式)
+  数据示例: {"date":"2014-01-02","code":"600519","open":127.99,"close":125.98,"high":127.99,"low":125.6,"volume":21976,"amount":277430224,"turnover\_rate":0.211684,"pe\_ratio":9.370103} (原文件为parquet, 为做示意我改成json格式)
 
-     注意内存的高效性
+  注意内存的高效性
 
 ### 标签生成器
 
-- [] 写一个抽象类 LabelGenerator, 定义了生成标签的基本属性: 输入一组(内有多条)数据, 经过一个生成方法, 得到一个标签. 可以选择是离散的标签还是连续的标签 (用于区分分类-回归). 子类需要提供的就是具体的标签生成逻辑 
-     需考虑效率, 需可并行处理. 
+- [x] 写一个抽象类 LabelGenerator, 定义了生成标签的基本属性: 输入一组(内有多条)数据, 经过一个生成方法, 得到一个标签. 可以选择是离散的标签还是连续的标签 (用于区分分类-回归). 子类需要提供的就是具体的标签生成逻辑
+  需考虑效率, 需可并行处理.
 
 ## 要求
 
