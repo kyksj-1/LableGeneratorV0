@@ -6,6 +6,7 @@ from pathlib import Path
 from src.data_loader.base import DataLoader
 from src.utils.config_manager import config
 from src.utils.logger import logger
+from typing import Any
 
 class DailyDataLoader(DataLoader):
     """
@@ -20,12 +21,12 @@ class DailyDataLoader(DataLoader):
 
     def __init__(
         self, 
-        data_footprint_filter: Optional[pl.Expr] = None,
+        data_footprint_filter: Optional[Any] = None,
         columns: Optional[List[str]] = None,
         prefix_code: bool = False
     ):
         """
-        :param data_footprint_filter: 数据指纹过滤器
+        :param data_footprint_filter: 数据指纹过滤器 (支持 pl.Expr, dict 等)
         :param columns: 需要加载的列，如果为 None，则使用 DEFAULT_COLUMNS
         :param prefix_code: 是否为 code 列添加前缀 (sh/sz)，默认关闭
         """
@@ -57,8 +58,9 @@ class DailyDataLoader(DataLoader):
                 lf = lf.select(final_cols)
                 
             # 3. 谓词下推 (Predicate Pushdown)
-            if self.data_footprint_filter is not None:
-                lf = lf.filter(self.data_footprint_filter)
+            # 使用基类已经转换好的 filter_expr
+            if self.filter_expr is not None:
+                lf = lf.filter(self.filter_expr)
                 
             # 4. 可选功能: 股票代码加前缀
             # (如果代码以 6 开头加 sh，否则加 sz，这里用 Polars 的 when.then 表达式)
