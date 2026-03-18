@@ -16,7 +16,7 @@
 """
 
 import polars as pl
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from src.label_generator.base import LabelGenerator
 from src.utils.logger import logger
@@ -143,3 +143,21 @@ class ReturnLabelGenerator(LabelGenerator):
 
         # shift(-offset) 表示取未来第 offset 行的值
         return base_expr.shift(-offset).over(self.code_col)
+
+    def _get_cache_params(self) -> Dict[str, Any]:
+        """
+        返回收益率生成器的完整参数，用于缓存 meta.json
+
+        :return: 包含所有配置参数的字典
+        """
+        return {
+            "label_name": self.label_name,
+            "is_discrete": self.is_discrete,
+            "buy_offset": self.buy_offset,
+            "sell_offset": self.sell_offset,
+            "buy_price": self.buy_price,
+            "sell_price": self.sell_price,
+            "return_type": self.return_type,
+            "code_col": self.code_col,
+            "date_col": self.date_col,
+        }

@@ -340,3 +340,28 @@ class PriceComparisonLabel(LabelGenerator):
             return f"cmp_{target_col}{target_offset}_vs_{ref_col}{ref_offset}"
         else:
             return f"cmp_{target_col}{target_offset}_disc"
+
+    def _get_cache_params(self) -> Dict[str, Any]:
+        """
+        返回价格比较生成器的完整参数，用于缓存 meta.json
+
+        :return: 包含所有配置参数的字典
+        """
+        params: Dict[str, Any] = {
+            "label_name": self.label_name,
+            "is_discrete": self.is_discrete,
+            "target": list(self.target),
+            "mode": self.mode,
+            "code_col": self.code_col,
+            "date_col": self.date_col,
+        }
+
+        if self.reference is not None:
+            params["reference"] = list(self.reference)
+        if self.normalizer_price is not None:
+            params["normalizer_price"] = list(self.normalizer_price)
+        if self.conditions is not None:
+            params["conditions"] = self.conditions
+            params["default_value"] = self.default_value
+
+        return params

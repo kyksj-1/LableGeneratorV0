@@ -17,10 +17,23 @@
       "normalization": "rank",        # None / "rank" / "zscore" / "industry_neutral"
       "discretization": None,         # None / {"method": "quantile", "n_bins": 3}
     }
+
+缓存能力:
+  save_result() / load_result() 将工厂的完整输出落盘，
+  meta.json 记录所有 recipes 参数，便于复现和验证。
 """
 
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
 import polars as pl
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
+
+# 确保能导入 config
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+from config.config_base import LABEL_CACHE_DIR
 
 from src.label_generator.returns import ReturnLabelGenerator
 from src.label_generator.normalizer import CrossSectionalNormalizer
@@ -209,3 +222,107 @@ class LabelFactory:
                 "discretization": {"method": "quantile", "n_bins": 3},
             },
         }
+
+    # ================================================================
+    # 工厂级落盘缓存
+    # ================================================================
+
+    def save_result(
+        self,
+        lf_or_df: Union[pl.LazyFrame, pl.DataFrame],
+        cache_name: str,
+        recipes: Optional[Dict[str, Dict[str, Any]]] = None,
+        cache_dir: Optional[Path] = None,
+        columns: Optional[List[str]] = None,
+    ) -> Path:
+        """
+        将工厂的完整输出落盘
+
+        目录结构:
+          {cache_dir}/LabelFactory/{cache_name}/data.parquet
+          {cache_dir}/LabelFactory/{cache_name}/meta.json
+
+        :param lf_or_df: 工厂生成标签后的 LazyFrame 或 DataFrame
+        :param cache_name: 缓存名称（作为子目录名，如 "full_2023"）
+        :param recipes: 本次使用的配方字典，记录到 meta.json
+        :param cache_dir: 缓存根目录，默认使用 LABEL_CACHE_DIR
+        :param columns: 指定保存的列名列表，默认 None 保存全部
+        :return: parquet 文件路径
+        """
+        root = Path(cache_dir) if cache_dir is not None else LABEL_CACHE_DIR
+        sub_dir = root / "LabelFactory" / cache_name
+        sub_dir.mkdir(parents=True, exist_ok=True)
+
+        # LazyFrame → DataFrame
+        if isinstance(lf_or_df, pl.LazyFrame):
+            logger.info(f"工厂缓存: 正在 collect LazyFrame...")
+            df = lf_or_df.collect()
+        else:
+            df = lf_or_df
+
+        # 按需筛选列
+        if columns is not None:
+            missing = set(columns) - set(df.columns)
+            if missing:
+                raise ValueError(f"指定的列不存在于数据中: {missing}")
+            df = df.select(columns)
+
+        # 写入 parquet
+        parquet_path = sub_dir / "data.parquet"
+        df.write_parquet(parquet_path)
+
+        # 构建并写入 meta.json
+        meta = {
+            "factory_class": "LabelFactory",
+            "cache_name": cache_name,
+            "recipes": recipes,
+            "created_at": datetime.now().isoformat(),
+            "data_shape": {"rows": df.height, "cols": df.width},
+            "saved_columns": df.columns,
+        }
+        meta_path = sub_dir / "meta.json"
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(meta, f, ensure_ascii=False, indent=2)
+
+        logger.info(
+            f"工厂缓存已保存: {parquet_path} "
+            f"({df.height} 行, {df.width} 列)"
+        )
+        return parquet_path
+
+    def load_result(
+        self,
+        cache_name: str,
+        cache_dir: Optional[Path] = None,
+        as_lazy: bool = True,
+    ) -> Optional[Union[pl.LazyFrame, pl.DataFrame]]:
+        """
+        从缓存加载工厂的完整输出
+
+        :param cache_name: 缓存名称
+        :param cache_dir: 缓存根目录
+        :param as_lazy: True 返回 LazyFrame, False 返回 DataFrame
+        :return: 缓存数据，不存在则返回 None
+        """
+        root = Path(cache_dir) if cache_dir is not None else LABEL_CACHE_DIR
+        sub_dir = root / "LabelFactory" / cache_name
+        parquet_path = sub_dir / "data.parquet"
+        meta_path = sub_dir / "meta.json"
+
+        if not parquet_path.exists():
+            logger.info(f"未找到工厂缓存: {parquet_path}")
+            return None
+
+        if meta_path.exists():
+            with open(meta_path, "r", encoding="utf-8") as f:
+                meta = json.load(f)
+            logger.info(
+                f"工厂缓存命中: {parquet_path} "
+                f"(创建于 {meta.get('created_at', '未知')}, "
+                f"{meta['data_shape']['rows']} 行)"
+            )
+
+        if as_lazy:
+            return pl.scan_parquet(parquet_path)
+        else:
+            return pl.read_parquet(parquet_path)
