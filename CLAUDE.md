@@ -14,7 +14,6 @@
 7. 为实现高性能, 考虑用 Polars 库代替 Pandas 库
 8. 开发环境为conda的quant\_fin\_env
 
-## 任务
 
 注意, 打了勾\[x]的是已经完成的任务.
 
