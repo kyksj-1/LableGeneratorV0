@@ -13,3 +13,69 @@ data_loading:
   
 processing:
   n_jobs: 4 # 如果后续有需要 CPU 密集计算的地方
+
+# ============================================================
+# 标签缓存配置 (Label Cache)
+# ============================================================
+label_cache:
+  # 是否启用落盘缓存
+  enabled: true
+  # 保存时是否只保留索引列 + 标签列 (节省空间)
+  # true: 只保存 [date, code, label_name]
+  # false: 保存全部列
+  minimal_columns: true
+
+# ============================================================
+# 元数据路径 (相对于项目根目录)
+# ============================================================
+metadata:
+  stock_ids_path: "stock_ids.json"
+  dicts_path: "dicts.json"
+
+# ============================================================
+# 标签配方 (Label Recipes)
+# 每个配方是一组参数，驱动标签工厂自动生成标签列
+#
+# 参数说明:
+#   buy_offset:     买入日偏移 (默认 1, 即 T+1 买入, A股T+1制度)
+#   sell_offset:    卖出日偏移 (默认 5, 即 T+5 卖出)
+#   buy_price:      买入价类型 (open / close / vwap)
+#   sell_price:     卖出价类型 (open / close / vwap)
+#   return_type:    收益率类型 (simple / log)
+#   normalization:  截面标准化 (null / rank / zscore / industry_neutral)
+#   discretization: 离散化 (null / {method: quantile, n_bins: 3} / {method: threshold, top_pct: 0.2, bottom_pct: 0.2})
+# ============================================================
+label_recipes:
+  # 5日可交易收益 截面排序分 — 最基础的截面选股标签
+  ret_5d_rank:
+    buy_offset: 1
+    sell_offset: 5
+    buy_price: "open"
+    sell_price: "close"
+    normalization: "rank"
+
+  # 5日行业中性化收益 — 纯 Alpha 信号 (需先 join 行业信息)
+  alpha_5d:
+    buy_offset: 1
+    sell_offset: 5
+    buy_price: "open"
+    sell_price: "close"
+    normalization: "industry_neutral"
+
+  # 10日可交易收益 截面排序分
+  ret_10d_rank:
+    buy_offset: 1
+    sell_offset: 10
+    buy_price: "open"
+    sell_price: "close"
+    normalization: "rank"
+
+  # 5日收益三分类 — 用于分类任务
+  ret_5d_3cls:
+    buy_offset: 1
+    sell_offset: 5
+    buy_price: "open"
+    sell_price: "close"
+    discretization:
+      method: "quantile"
+      n_bins: 3

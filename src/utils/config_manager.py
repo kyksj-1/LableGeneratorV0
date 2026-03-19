@@ -28,6 +28,21 @@ class ConfigManager:
         return self._config.get("data_loading", {})
 
     @property
+    def label_cache(self) -> dict:
+        """标签缓存配置: enabled, minimal_columns 等"""
+        return self._config.get("label_cache", {})
+
+    @property
+    def label_cache_enabled(self) -> bool:
+        """是否启用标签落盘缓存（默认 False）"""
+        return self.label_cache.get("enabled", False)
+
+    @property
+    def label_cache_minimal(self) -> bool:
+        """是否只保存索引 + 标签列（默认 True）"""
+        return self.label_cache.get("minimal_columns", True)
+
+    @property
     def raw_data_dir(self) -> Path:
         return config_base.RAW_DATA_DIR
 
